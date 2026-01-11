@@ -44,6 +44,28 @@ services:
       timeout: 10s
       retries: 5
 
+  nakup:
+    image: ghcr.io/prpo-skupina-02/nakup:main
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=DEBUG
+      - TZ=
+      - POSTGRES_IP=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE_NAME=nakup
+      - POSTGRES_TEST_DATABASE_NAME=nakup_test
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/healthcheck"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
+
 networks:
   cinecore-net:
     name: cinecore-net

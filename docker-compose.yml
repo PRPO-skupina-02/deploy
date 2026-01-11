@@ -6,9 +6,10 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: spored
+      POSTGRES_MULTIPLE_DATABASES: spored,nakup
     volumes:
-      - pgdata:/var/lib/postgresql/data 
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/docker-postgresql-multiple-databases.sh
+      - pgdata:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
@@ -26,7 +27,8 @@ services:
     networks:
       - cinecore-net
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - LOG_LEVEL=INFO
       - TZ=

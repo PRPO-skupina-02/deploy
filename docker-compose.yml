@@ -6,9 +6,10 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: spored
+      POSTGRES_MULTIPLE_DATABASES: spored,nakup
     volumes:
-      - pgdata:/var/lib/postgresql/data 
+      - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/docker-postgresql-multiple-databases.sh
+      - pgdata:/var/lib/postgresql/data
     ports:
       - 5432:5432
     networks:
@@ -21,12 +22,14 @@ services:
 
   spored:
     image: ghcr.io/prpo-skupina-02/spored:main
+    restart: always
     ports:
       - "8080:8080"
     networks:
       - cinecore-net
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - LOG_LEVEL=INFO
       - TZ=
@@ -38,6 +41,32 @@ services:
       - POSTGRES_TEST_DATABASE_NAME=spored_test
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
+
+  nakup:
+    image: ghcr.io/prpo-skupina-02/nakup:main
+    restart: always
+    ports:
+      - "8081:8081"
+    networks:
+      - cinecore-net
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=DEBUG
+      - TZ=
+      - POSTGRES_IP=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE_NAME=nakup
+      - POSTGRES_TEST_DATABASE_NAME=nakup_test
+      - SPORED_HOST=nakup:8080
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/healthcheck"]
       interval: 3s
       timeout: 10s
       retries: 5

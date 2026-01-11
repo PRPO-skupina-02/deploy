@@ -13,6 +13,11 @@ services:
       - 5432:5432
     networks:
       - cinecore-net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
 
   spored:
     image: ghcr.io/prpo-skupina-02/spored:main
@@ -31,6 +36,11 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DATABASE_NAME=spored
       - POSTGRES_TEST_DATABASE_NAME=spored_test
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
 
 networks:
   cinecore-net:

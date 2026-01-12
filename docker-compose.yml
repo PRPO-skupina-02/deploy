@@ -75,7 +75,7 @@ services:
     image: ghcr.io/prpo-skupina-02/nakup:main
     restart: always
     ports:
-      - "8081:8081"
+      - "8081:8080"
     networks:
       - cinecore-net
     depends_on:
@@ -90,9 +90,9 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DATABASE_NAME=nakup
       - POSTGRES_TEST_DATABASE_NAME=nakup_test
-      - SPORED_HOST=nakup:8080
+      - SPORED_HOST=spored:8080
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/healthcheck"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
       interval: 3s
       timeout: 10s
       retries: 5
@@ -113,6 +113,21 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-noreply@cinecore.com}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
+
+  reklame:
+    image: ghcr.io/prpo-skupina-02/reklame:main
+    ports:
+      - "8084:8080"
+    restart: always
+    environment:
+      - LOG_LEVEL=DEBUG
+      - TZ=
+      - SPORED_HOST=spored:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
       interval: 3s

@@ -97,6 +97,25 @@ services:
       timeout: 10s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    networks:
+      - cinecore-net
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+
 networks:
   cinecore-net:
     name: cinecore-net
@@ -104,3 +123,4 @@ networks:
 
 volumes:
   pgdata:
+  rabbitmq-data:

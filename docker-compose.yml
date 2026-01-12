@@ -97,6 +97,28 @@ services:
       timeout: 10s
       retries: 5
 
+  obvestila:
+    image: ghcr.io/prpo-skupina-02/obvestila:main
+    restart: always
+    ports:
+      - "8083:8080"
+    networks:
+      - cinecore-net
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=INFO
+      - TZ=
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-noreply@cinecore.com}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
+
   rabbitmq:
     image: rabbitmq:3-management
     restart: always

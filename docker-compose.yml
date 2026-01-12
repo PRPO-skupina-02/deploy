@@ -39,6 +39,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DATABASE_NAME=spored
       - POSTGRES_TEST_DATABASE_NAME=spored_test
+      - AUTH_HOST=auth:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
       interval: 3s
@@ -91,6 +92,7 @@ services:
       - POSTGRES_DATABASE_NAME=nakup
       - POSTGRES_TEST_DATABASE_NAME=nakup_test
       - SPORED_HOST=spored:8080
+      - AUTH_HOST=auth:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
       interval: 3s

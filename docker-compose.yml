@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_MULTIPLE_DATABASES: spored,nakup,auth
+      POSTGRES_MULTIPLE_DATABASES: spored,nakup,auth,predlogi
     volumes:
       - ./create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/docker-postgresql-multiple-databases.sh
       - pgdata:/var/lib/postgresql/data
@@ -115,6 +115,42 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - RESEND_API_KEY=${RESEND_API_KEY}
       - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-noreply@cinecore.com}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
+      interval: 3s
+      timeout: 10s
+      retries: 5
+
+  predlogi:
+    image: ghcr.io/prpo-skupina-02/predlogi:main
+    restart: always
+    ports:
+      - "8085:8080"
+    networks:
+      - cinecore-net
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - LOG_LEVEL=INFO
+      - TZ=
+      - POSTGRES_IP=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USERNAME=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DATABASE_NAME=predlogi
+      - POSTGRES_TEST_DATABASE_NAME=predlogi_test
+      - AUTH_HOST=http://auth:8080
+      - NAKUP_HOST=http://nakup:8080
+      - SPORED_HOST=http://spored:8080
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openai/gpt-4}
+      - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      - OPENROUTER_MAX_TOKENS=${OPENROUTER_MAX_TOKENS:-500}
+      - RECOMMENDATION_LOOKAHEAD_DAYS=${RECOMMENDATION_LOOKAHEAD_DAYS:-7}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthcheck"]
       interval: 3s

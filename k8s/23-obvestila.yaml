@@ -1,0 +1,99 @@
+# Obvestila Microservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: obvestila
+  namespace: cinecore
+  labels:
+    app: obvestila
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: obvestila
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: obvestila
+  namespace: cinecore
+  labels:
+    app: obvestila
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: obvestila
+  template:
+    metadata:
+      labels:
+        app: obvestila
+    spec:
+      containers:
+        - name: obvestila
+          image: ghcr.io/prpo-skupina-02/obvestila:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: obvestila-config
+                  key: LOG_LEVEL
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: TZ
+            - name: RABBITMQ_URL
+              value: amqp://$(RABBITMQ_USERNAME):$(RABBITMQ_PASSWORD)@rabbitmq:5672/
+            - name: RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: username
+            - name: RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-credentials
+                  key: password
+            - name: RESEND_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: obvestila-secrets
+                  key: RESEND_API_KEY
+            - name: RESEND_FROM_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: obvestila-config
+                  key: RESEND_FROM_EMAIL
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3

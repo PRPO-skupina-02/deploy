@@ -1,0 +1,103 @@
+# Spored Microservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spored
+  namespace: cinecore
+  labels:
+    app: spored
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: spored
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spored
+  namespace: cinecore
+  labels:
+    app: spored
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: spored
+  template:
+    metadata:
+      labels:
+        app: spored
+    spec:
+      containers:
+        - name: spored
+          image: ghcr.io/prpo-skupina-02/spored:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: spored-config
+                  key: LOG_LEVEL
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: TZ
+            - name: POSTGRES_IP
+              value: postgres
+            - name: POSTGRES_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: global-config
+                  key: POSTGRES_PORT
+            - name: POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: POSTGRES_DATABASE_NAME
+              value: spored
+            - name: POSTGRES_TEST_DATABASE_NAME
+              value: spored_test
+            - name: AUTH_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: spored-config
+                  key: AUTH_HOST
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthcheck
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
